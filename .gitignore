@@ -1,0 +1,13 @@
+# Built locally from source
+PrintScreen.exe
+*.pdb
+*.mdb
+bin/
+obj/
+
+# Local editor and OS files
+.vs/
+*.user
+*.suo
+Thumbs.db
+Desktop.ini
