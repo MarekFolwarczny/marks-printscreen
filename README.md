@@ -1,44 +1,46 @@
-# Výřezy obrazovky
+# Screen Snips
 
-Lehká aplikace pro Windows 10/11, která běží u hodin. Vybranou část obrazovky otevře v Malování nebo zkopíruje do schránky. Podporuje více monitorů, češtinu a angličtinu. [English documentation](README.en.md).
+A lightweight Windows 10/11 tray app that opens a selected screen area in Paint or copies it to the clipboard. It supports multiple monitors and English and Czech UI text. [Česká dokumentace](README.cs.md).
 
-## Sestavení a spuštění
+**[Download Screen Snips for Windows (.exe)](https://github.com/MarekFolwarczny/marks-printscreen/releases/latest/download/PrintScreen.exe)**
 
-Ve Windows spusťte `Sestavit-a-spustit.cmd`. Skript sestaví `PrintScreen.exe` ze souborů `Program.cs` a `SettingsDialog.cs` pomocí kompilátoru .NET Framework, který musí být v systému dostupný. Využívá také `Brand.ico` a `PrintScreen.manifest`; žádné další balíčky nepotřebuje. Pokud aplikace už běží, ukončete ji přes ikonu u hodin, aby se EXE dalo přepsat. Hotový `PrintScreen.exe` lze pak spouštět přímo.
+## Download and run
 
-Při prvním spuštění se zapne automatické spouštění **po přihlášení aktuálního uživatele**. V nabídce ikony lze volbu **Spouštět po přihlášení** vypnout. Aplikace nevyžaduje oprávnění správce.
+Download `PrintScreen.exe` from the link above and run it on Windows. No installer is required. The EXE is distributed through [Releases](https://github.com/MarekFolwarczny/marks-printscreen/releases); the repository contains the source code. To build from source, run `Build-and-run.cmd` on Windows. It compiles `Program.cs` and `SettingsDialog.cs` with the .NET Framework compiler available on the system, embedding `Brand.ico` and `PrintScreen.manifest`. No additional packages are needed. Exit a running instance from the tray menu before rebuilding so the EXE can be replaced. The original `Sestavit-a-spustit.cmd` name remains as an alias.
 
-## Použití
+On first launch, the app enables startup **when the current user signs in**. Right-click its tray icon and toggle **Start when I sign in** to change this. It needs no administrator privileges.
 
-| Zkratka | Akce |
+## Use
+
+| Shortcut | Action |
 | --- | --- |
-| **Ctrl + W** | Tažením levého tlačítka vyberte oblast. Výřez se uloží jako PNG a otevře v Malování. |
-| **Ctrl + Shift + W** | Vyberte oblast. Obrázek se vloží do schránky bez uložení souboru. |
-| **Esc** během výběru | Zruší výřez. |
+| **Ctrl + W** | Drag with the left mouse button to select an area. The snip is saved as PNG and opened in Paint. |
+| **Ctrl + Shift + W** | Select an area. The image is copied to the clipboard without creating a file. |
+| **Esc** while selecting | Cancel the snip. |
 
-Zkratky fungují v celém systému. Výchozí **Ctrl + W** tak může převzít funkci zavření karty v jiných aplikacích; v takovém případě ji změňte.
+Shortcuts are system-wide. The default **Ctrl + W** may take over Close Tab in other apps; change it if this interferes with your workflow.
 
-### Nastavení zkratek a jazyka
+### Change shortcuts and language
 
-Pravým tlačítkem klikněte na ikonu u hodin a zvolte **Nastavení zkratek…**. U každé akce zaškrtněte Ctrl, Shift nebo Alt a **vyberte klávesu v seznamu**. Pro **Ctrl + R** nechte Ctrl zaškrtnuté a v seznamu zvolte **R**. Stisk samotné kombinace do pole nic nezadá. Samostatně lze použít také F1–F24. Obě akce musí mít různé kombinace. Po kliknutí na **Uložit** aplikace ověří, zda je Windows dokáže zaregistrovat; obsazenou kombinaci odmítne a obnoví původní zkratky.
+Right-click the tray icon and open **Shortcut settings…**. For each action, check Ctrl, Shift or Alt and **choose a key from the drop-down list**. For **Ctrl + R**, leave Ctrl checked and select **R**. Pressing the combination itself does not enter it. F1–F24 can also be used without a modifier. The two actions need different shortcuts. Click **Save**; the app checks whether Windows can register both combinations and restores the previous ones if one is unavailable.
 
-V nabídce **Jazyk → English** lze přepnout uživatelské texty. Volba se uloží pro příští spuštění.
+English is the default for new users. Choose **Language → Čeština** in the tray menu to switch to Czech, or **Language → English** to switch back. The choice is saved for future launches.
 
-## Obrázky a nastavení
+## Images and settings
 
-- Pro Malování vznikne soubor `%TEMP%\PrintScreenAplikace\yyyy-MM-dd_HH-mm-ss-fff.png` podle místního data a času pořízení. Při shodě názvů se přidá číselná přípona. Jde o dočasné úložiště; úpravy, které chcete uchovat, uložte z Malování pomocí **Uložit jako** do vlastní složky.
-- Při kopírování do schránky aplikace žádný soubor nevytváří. Další kopírování může obsah schránky přepsat.
-- Zkratky, jazyk a volba spuštění se ukládají pod `HKEY_CURRENT_USER\Software\PrintScreenAplikace`. Automatické spuštění používá hodnotu `PrintScreenAplikace` pod `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run` s cestou k EXE. Pokud EXE přesunete, spusťte ho z nového umístění, aby se cesta aktualizovala.
+- Paint snips are saved under `%TEMP%\PrintScreenAplikace\yyyy-MM-dd_HH-mm-ss-fff.png`, named with the local capture time. A numeric suffix prevents a duplicate name. This is a temporary location: use **Save as** in Paint to keep edits in a folder of your choice.
+- Clipboard snips create no file. Copying something else may replace the clipboard image.
+- Shortcuts, language and startup preference are stored in `HKEY_CURRENT_USER\Software\PrintScreenAplikace`. Startup uses the `PrintScreenAplikace` value in `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`, pointing to the current EXE. If you move the EXE, launch it from its new location to update that path.
 
-Aplikace neposílá snímky po síti. Obrazovku snímá až po stisku zkratky.
+The app does not send screenshots over the network. It captures the screen only after a shortcut is pressed.
 
-## Potíže
+## Troubleshooting
 
-- **Zkratka nereaguje:** Ověřte, že aplikace běží u hodin. Jiná aplikace může kombinaci používat; v nastavení zkuste jinou.
-- **Po stisku Ctrl + R se v poli nic nezmění:** Zaškrtněte Ctrl a vyberte R v rozbalovacím seznamu.
-- **Po sestavení stále běží stará verze:** Ukončete ji přes nabídku ikony, spusťte sestavovací skript znovu a zkontrolujte jeho výstup.
-- **Výřez se neotevře v Malování:** Aplikace zobrazí chybu, pokud Windows nedokáže spustit `mspaint.exe`. Zkontrolujte dostupnost Malování.
+- **A shortcut does nothing:** Check that the app is running in the tray. Try another combination if another app has reserved it.
+- **Pressing Ctrl + R changes nothing in the list:** Check Ctrl and choose R from the drop-down list.
+- **The old version still runs after a rebuild:** Exit it from the tray menu, run the build script again and check its output.
+- **The snip does not open in Paint:** The app reports an error if Windows cannot start `mspaint.exe`. Check that Paint is available.
 
-## Pro vývojáře
+## Development
 
-[DEVELOPERS.md](DEVELOPERS.md) popisuje stavbu aplikace, tok pořízení výřezu a ukládané nastavení. Zdrojový kód je poskytován pod [licencí MIT](LICENSE). Ikona `Brand.ico` vychází z dodaného modrého symbolu značky.
+[DEVELOPERS.md](DEVELOPERS.md) describes the app structure, capture flow and stored settings. The source is released under the [MIT license](LICENSE). `Brand.ico` was derived from the supplied blue brand symbol.

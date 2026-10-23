@@ -1,46 +1,49 @@
-# Technické poznámky
+# Developer notes
 
-[English version](DEVELOPERS.en.md)
+[Česká verze](DEVELOPERS.cs.md)
 
-## Soubory a sestavení
+## Files and build
 
-| Soubor | Úloha |
+| File | Purpose |
 | --- | --- |
-| `Program.cs` | Vstupní bod, ikona u hodin, registrace zkratek, výběr oblasti a předání výsledku. |
-| `SettingsDialog.cs` | Dialog pro výběr dvou kombinací a kontrolu jejich platnosti. |
-| `Brand.ico` | Ikona EXE, dialogu a oznamovací oblasti. |
-| `PrintScreen.manifest` | Deklaruje podporu DPI pro proces. |
-| `Sestavit-a-spustit.cmd` | Vyhledá 64bitový nebo 32bitový kompilátor .NET Framework, sestaví WinForms EXE a spustí ho. |
+| `Program.cs` | Entry point, tray icon, hotkey registration, area selection and output. |
+| `SettingsDialog.cs` | Picker for the two shortcuts and their validation. |
+| `Brand.ico` | EXE, settings dialog and tray icon. |
+| `PrintScreen.manifest` | Declares process DPI awareness. |
+| `Build-and-run.cmd` | Finds the 64-bit or 32-bit .NET Framework compiler, builds a WinForms EXE and starts it. |
+| `Sestavit-a-spustit.cmd` | Compatibility alias for the build script. |
 
-Jde o samostatnou aplikaci WinForms pro .NET Framework bez souboru projektu a bez externích knihoven. Sestavovací skript musí běžet ve Windows. Příkaz kompilátoru používá `/target:winexe`, `/optimize+`, referenci na `System.dll`, `System.Windows.Forms.dll` a `System.Drawing.dll` a vloží manifest i ikonu. Před přestavbou ukončete běžící EXE.
+This is a standalone .NET Framework WinForms app with no project file or external libraries. The build script runs on Windows. Its compiler command uses `/target:winexe`, `/optimize+`, references to `System.dll`, `System.Windows.Forms.dll` and `System.Drawing.dll`, and embeds the manifest and icon. Exit a running instance before rebuilding.
 
-## Životní cyklus
+The built EXE is published as a GitHub Release asset rather than committed to the source repository. Rebuild it from the matching source before publishing a new release.
 
-1. `Program.Main` nastaví WinForms a mutex `Local\PrintScreenAplikace`; současně může běžet jen jedna instance v uživatelské relaci.
-2. `TrayApp` načte nastavení z registru aktuálního uživatele, vytvoří ikonu a nabídku, nastaví spuštění po přihlášení a pomocí `RegisterHotKey` zaregistruje obě zkratky. Mezi stisky neprovádí opakované snímání ani dotazování klávesnice.
-3. Skryté `HotkeyWindow` přijímá `WM_HOTKEY` a předává identifikátor akce metodě `OnHotkey`. Příznak `capturing` brání souběžnému otevření několika výběrů.
-4. Při ukončení se zkratky odregistrují a ikona, nabídka i okno se uvolní. Spuštění po přihlášení zůstává nastavené, dokud ho uživatel nevypne.
+## Lifecycle
 
-## Pořízení výřezu
+1. `Program.Main` initializes WinForms and obtains the `Local\PrintScreenAplikace` mutex, allowing one instance per user session.
+2. `TrayApp` reads per-user settings, creates the tray icon and menu, configures sign-in startup and registers both shortcuts with `RegisterHotKey`. It does not poll the keyboard or capture the screen while idle.
+3. The hidden `HotkeyWindow` receives `WM_HOTKEY` and passes the action ID to `OnHotkey`. The `capturing` flag prevents overlapping selections.
+4. On exit, the app unregisters the shortcuts and disposes the icon, menu and window. Sign-in startup remains configured until the user switches it off.
 
-`OnHotkey` přečte hranice `SystemInformation.VirtualScreen`, vytvoří bitmapu celé virtuální obrazovky a zkopíruje do ní pixely před zobrazením výběrového okna. `SelectionForm` pak přes všechny monitory zobrazí tento snímek se ztmavením. Levým tlačítkem se označí obdélník; `Esc` nebo výběr s nulovou plochou nevytvoří výsledek. Vybraná oblast se vyřízne z původní bitmapy.
+## Capture flow
 
-- Akce **Malování** uloží PNG do `%TEMP%\PrintScreenAplikace`, pojmenuje jej `yyyy-MM-dd_HH-mm-ss-fff.png` podle místního času a spustí `mspaint.exe` s cestou k souboru. Při kolizi názvu přidá `-2`, `-3` atd. Aplikace dočasné soubory sama nemaže.
-- Akce **Schránka** předá bitmapu do Windows schránky přes `Clipboard.SetDataObject` se třemi pokusy a 100ms prodlevou. Soubor se nevytvoří.
+`OnHotkey` reads `SystemInformation.VirtualScreen`, creates a bitmap of the entire virtual desktop and copies its pixels before showing the selection window. `SelectionForm` displays this snapshot, dimmed, across the monitors. Dragging with the left mouse button selects a rectangle. `Esc` or a zero-area selection produces no output. The chosen area is cloned from the original bitmap.
 
-Výběr je synchronní na vlákně WinForms. Po dobu výběru je v paměti bitmapa celé virtuální obrazovky; spotřeba paměti proto roste s rozlišením a počtem monitorů. Chyby při snímání, ukládání a spuštění Malování se zobrazí uživateli.
+- **Paint:** Save a PNG under `%TEMP%\PrintScreenAplikace`, name it `yyyy-MM-dd_HH-mm-ss-fff.png` using local time and launch `mspaint.exe` with its path. On a filename collision, append `-2`, `-3`, etc. The app does not delete temporary files itself.
+- **Clipboard:** Pass the bitmap to the Windows clipboard with `Clipboard.SetDataObject`, allowing three retries at 100ms intervals. No file is created.
 
-## Zkratky a nastavení
+Selection runs synchronously on the WinForms thread. The bitmap of the entire virtual desktop stays in memory during selection, so memory use increases with the number and resolution of monitors. Capture, save and Paint launch errors are shown to the user.
 
-Výchozí hodnoty jsou **Ctrl + W** pro Malování a **Ctrl + Shift + W** pro schránku. Dialog nabízí písmena A–Z, číslice 0–9, F1–F24, mezerník, Insert, Delete, Home, End, Page Up, Page Down a šipky. Běžná klávesa vyžaduje alespoň jeden modifikátor Ctrl, Shift nebo Alt; F1–F24 mohou být samostatně. `ValidKey` také odmítá samotné modifikátory, `Esc`, `Enter` a `Tab`. Obě akce musí mít různé kombinace.
+## Hotkeys and settings
 
-Při otevření dialogu se původní zkratky dočasně odregistrují. Po potvrzení se zkusí zaregistrovat nový pár; když druhá registrace selže, první se zase odregistruje. Při zrušení nebo neúspěchu se obnoví původní pár. Nastavení se uloží až po úspěšné registraci. Kombinaci může odmítnout Windows nebo jiný program.
+The defaults are **Ctrl + W** for Paint and **Ctrl + Shift + W** for the clipboard. The dialog offers A–Z, 0–9, F1–F24, Space, Insert, Delete, Home, End, Page Up, Page Down and arrow keys. Regular keys need at least one of Ctrl, Shift or Alt; F1–F24 can be used alone. `ValidKey` also rejects bare modifiers, `Esc`, `Enter` and `Tab`. The two actions need distinct shortcuts.
 
-| Klíč registru aktuálního uživatele | Hodnota | Význam |
+Opening the dialog temporarily unregisters the old hotkeys. On confirmation, the app attempts to register the new pair; if the second registration fails, it unregisters the first. Cancellation or failure restores the previous pair. Values are saved only after successful registration. Windows or another app may reserve a combination.
+
+| Per-user registry key | Value | Meaning |
 | --- | --- | --- |
-| `Software\PrintScreenAplikace` | `PaintHotkey`, `ClipboardHotkey` | Číselné hodnoty `System.Windows.Forms.Keys`. |
-| `Software\PrintScreenAplikace` | `Language` | `cs` nebo `en`; výchozí je čeština. |
-| `Software\PrintScreenAplikace` | `StartAtLogin` | 1 nebo 0; výchozí je 1. |
-| `Software\Microsoft\Windows\CurrentVersion\Run` | `PrintScreenAplikace` | Cesta k EXE v uvozovkách, pokud je automatické spuštění zapnuté. |
+| `Software\PrintScreenAplikace` | `PaintHotkey`, `ClipboardHotkey` | Numeric `System.Windows.Forms.Keys` values. |
+| `Software\PrintScreenAplikace` | `Language` | `en` or `cs`; English is the default when no choice has been saved. |
+| `Software\PrintScreenAplikace` | `StartAtLogin` | 1 or 0; 1 is the default. |
+| `Software\Microsoft\Windows\CurrentVersion\Run` | `PrintScreenAplikace` | Quoted EXE path when sign-in startup is enabled. |
 
-Texty rozhraní se vybírají pomocí metody `T(czech, englishText)` v `TrayApp` a `SettingsDialog`. Při přidání dalšího uživatelského textu doplňte obě jazykové varianty a udržujte oba soubory README v souladu.
+UI strings are selected with `T(czech, englishText)` in `TrayApp` and `SettingsDialog`. When adding a user-facing string, supply both languages and keep the two README files aligned.

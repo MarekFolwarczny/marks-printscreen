@@ -64,7 +64,7 @@ namespace PrintScreenAplikace
             {
                 paintKey = ReadKey(key, "PaintHotkey", paintKey);
                 clipboardKey = ReadKey(key, "ClipboardHotkey", clipboardKey);
-                english = string.Equals(Convert.ToString(key.GetValue("Language", "cs")), "en", StringComparison.OrdinalIgnoreCase);
+                english = string.Equals(Convert.ToString(key.GetValue("Language", "en")), "en", StringComparison.OrdinalIgnoreCase);
             }
 
             window = new HotkeyWindow(OnHotkey);
